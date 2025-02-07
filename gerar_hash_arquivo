@@ -1,0 +1,19 @@
+import hashlib
+
+def gerar_hash_arquivo(caminho_arquivo, algoritmo="sha256"):
+    try:
+        hash_func = getattr(hashlib, algoritmo)()
+        with open(caminho_arquivo, "rb") as f:
+            for bloco in iter(lambda: f.read(4096), b""):
+                hash_func.update(bloco)
+        return hash_func.hexdigest()
+    except Exception as e:
+        print(f"Erro ao gerar hash: {e}")
+        return None
+
+if __name__ == "__main__":
+    caminho_arquivo = input("Digite o caminho do arquivo: ")
+    algoritmo = input("Digite o algoritmo de hash (padrão: sha256): ") or "sha256"
+    hash_arquivo = gerar_hash_arquivo(caminho_arquivo, algoritmo)
+    if hash_arquivo:
+        print(f"Hash ({algoritmo}): {hash_arquivo}")
