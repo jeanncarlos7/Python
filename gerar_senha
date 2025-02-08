@@ -1,0 +1,17 @@
+import random
+import string
+
+def gerar_senha(tamanho=12, caracteres=string.ascii_letters + string.digits + string.punctuation):
+    try:
+        senha = ''.join(random.choice(caracteres) for _ in range(tamanho))
+        return senha
+    except Exception as e:
+        print(f"Erro ao gerar senha: {e}")
+        return None
+
+if __name__ == "__main__":
+    tamanho = input("Digite o tamanho da senha (padrão: 12): ")
+    tamanho = int(tamanho) if tamanho.isdigit() else 12
+    senha = gerar_senha(tamanho)
+    if senha:
+        print(f"Senha gerada: {senha}")
