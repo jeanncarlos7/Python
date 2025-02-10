@@ -1,0 +1,53 @@
+import json
+import os
+
+def salvar_dados(dados, arquivo="dados.json"):
+    try:
+        with open(arquivo, "w", encoding="utf-8") as f:
+            json.dump(dados, f, indent=4, ensure_ascii=False)
+        print(f"Dados salvos em {arquivo}")
+    except Exception as e:
+        print(f"Erro ao salvar dados: {e}")
+
+def carregar_dados(arquivo="dados.json"):
+    try:
+        if os.path.exists(arquivo):
+            with open(arquivo, "r", encoding="utf-8") as f:
+                return json.load(f)
+        return {}
+    except Exception as e:
+        print(f"Erro ao carregar dados: {e}")
+        return {}
+
+def adicionar_usuario(nome, idade, email, arquivo="dados.json"):
+    dados = carregar_dados(arquivo)
+    dados[nome] = {"idade": idade, "email": email}
+    salvar_dados(dados, arquivo)
+
+def listar_usuarios(arquivo="dados.json"):
+    dados = carregar_dados(arquivo)
+    if not dados:
+        print("Nenhum usuário cadastrado.")
+        return
+    for nome, info in dados.items():
+        print(f"Nome: {nome}, Idade: {info['idade']}, Email: {info['email']}")
+
+if __name__ == "__main__":
+    while True:
+        print("\nMenu:")
+        print("1. Adicionar usuário")
+        print("2. Listar usuários")
+        print("3. Sair")
+        opcao = input("Escolha uma opção: ")
+        
+        if opcao == "1":
+            nome = input("Nome: ")
+            idade = input("Idade: ")
+            email = input("Email: ")
+            adicionar_usuario(nome, idade, email)
+        elif opcao == "2":
+            listar_usuarios()
+        elif opcao == "3":
+            break
+        else:
+            print("Opção inválida, tente novamente.")
