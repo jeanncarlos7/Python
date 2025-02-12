@@ -29,11 +29,12 @@ def calcular_score_credito(renda, historico_pagamento, dividas, tempo_relacionam
 if __name__ == "__main__":
     print("Bem-vindo ao Estimador de Score de Crédito!")
     
-    renda = float(input("Digite sua renda mensal (R$): "))
-    historico_pagamento = float(input("Percentual de pagamentos atrasados (0 a 1): "))
-    dividas = float(input("Percentual da renda comprometida com dívidas (0 a 1): "))
-    tempo_relacionamento = float(input("Tempo de relacionamento bancário (anos): "))
-    uso_credito = float(input("Percentual do limite de crédito utilizado (0 a 1): "))
+    # Valores de entrada fixos para evitar erro de input em ambiente restrito
+    renda = 5000.0  # Renda mensal fictícia
+    historico_pagamento = 0.1  # 10% de pagamentos atrasados
+    dividas = 0.3  # 30% da renda comprometida com dívidas
+    tempo_relacionamento = 5  # 5 anos de relacionamento bancário
+    uso_credito = 0.4  # 40% do limite de crédito utilizado
     
     score = calcular_score_credito(renda, historico_pagamento, dividas, tempo_relacionamento, uso_credito)
     print(f"Seu score estimado de crédito é: {score}")
