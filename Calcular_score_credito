@@ -1,0 +1,39 @@
+def calcular_score_credito(renda, historico_pagamento, dividas, tempo_relacionamento, uso_credito):
+    """
+    Calcula um score de crédito estimado baseado em critérios financeiros.
+    """
+    peso_renda = 0.2
+    peso_pagamento = 0.3
+    peso_dividas = 0.2
+    peso_tempo = 0.15
+    peso_uso_credito = 0.15
+    
+    # Normalização dos valores
+    score_renda = min(renda / 10000, 1) * 1000  # Considerando renda até 10k como 100%
+    score_pagamento = (1 - historico_pagamento) * 1000  # Quanto menor o atraso, melhor
+    score_dividas = (1 - dividas) * 1000  # Menos dívidas, melhor
+    score_tempo = min(tempo_relacionamento / 10, 1) * 1000  # Mais de 10 anos = máximo
+    score_uso_credito = (1 - uso_credito) * 1000  # Quanto menos usa do limite, melhor
+    
+    # Cálculo do score ponderado
+    score_final = (
+        (score_renda * peso_renda) +
+        (score_pagamento * peso_pagamento) +
+        (score_dividas * peso_dividas) +
+        (score_tempo * peso_tempo) +
+        (score_uso_credito * peso_uso_credito)
+    )
+    
+    return round(score_final, 2)
+
+if __name__ == "__main__":
+    print("Bem-vindo ao Estimador de Score de Crédito!")
+    
+    renda = float(input("Digite sua renda mensal (R$): "))
+    historico_pagamento = float(input("Percentual de pagamentos atrasados (0 a 1): "))
+    dividas = float(input("Percentual da renda comprometida com dívidas (0 a 1): "))
+    tempo_relacionamento = float(input("Tempo de relacionamento bancário (anos): "))
+    uso_credito = float(input("Percentual do limite de crédito utilizado (0 a 1): "))
+    
+    score = calcular_score_credito(renda, historico_pagamento, dividas, tempo_relacionamento, uso_credito)
+    print(f"Seu score estimado de crédito é: {score}")
