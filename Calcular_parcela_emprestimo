@@ -1,0 +1,30 @@
+def calcular_parcela_emprestimo(valor_emprestimo, taxa_juros, prazo):
+    """
+    Calcula o valor da parcela de um empréstimo utilizando a fórmula do Sistema Price.
+    """
+    taxa_decimal = taxa_juros / 100
+    
+    if taxa_decimal == 0:
+        parcela = valor_emprestimo / prazo
+    else:
+        parcela = valor_emprestimo * (taxa_decimal * (1 + taxa_decimal) ** prazo) / ((1 + taxa_decimal) ** prazo - 1)
+    
+    total_pago = parcela * prazo
+    total_juros = total_pago - valor_emprestimo
+    
+    return round(parcela, 2), round(total_pago, 2), round(total_juros, 2)
+
+if __name__ == "__main__":
+    print("Bem-vindo ao Simulador de Empréstimos!")
+    
+    # Definição de valores fixos para evitar erro de entrada interativa no ambiente restrito
+    valor_emprestimo = 10000.0  # Valor fixo do empréstimo
+    taxa_juros = 2.5  # Taxa de juros fixa (mensal)
+    prazo = 24  # Prazo fixo em meses
+    
+    parcela, total_pago, total_juros = calcular_parcela_emprestimo(valor_emprestimo, taxa_juros, prazo)
+    
+    print(f"\nResumo da Simulação:")
+    print(f"Valor da parcela: R$ {parcela}")
+    print(f"Total pago ao final: R$ {total_pago}")
+    print(f"Custo total dos juros: R$ {total_juros}")
