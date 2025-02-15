@@ -1,0 +1,44 @@
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report
+
+# Gerando um dataset fictício para análise de crédito
+def gerar_dados_credito(n=1000):
+    np.random.seed(42)
+    dados = {
+        "idade": np.random.randint(21, 65, n),
+        "renda_mensal": np.random.randint(1500, 20000, n),
+        "divida_atual": np.random.randint(0, 50000, n),
+        "historico_credito": np.random.randint(300, 850, n),
+        "tempo_emprego": np.random.randint(0, 30, n),
+        "inadimplente": np.random.choice([0, 1], size=n, p=[0.8, 0.2])  # 20% de inadimplência
+    }
+    return pd.DataFrame(dados)
+
+# Criando os dados
+df = gerar_dados_credito()
+
+# Separando features e target
+X = df.drop("inadimplente", axis=1)
+y = df["inadimplente"]
+
+# Dividindo em treino e teste
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
+
+# Treinando o modelo de classificação
+modelo = RandomForestClassifier(n_estimators=200, max_depth=10, min_samples_split=5, random_state=42)
+modelo.fit(X_train, y_train)
+
+# Fazendo previsões
+y_pred = modelo.predict(X_test)
+
+# Avaliando o modelo
+acc = accuracy_score(y_test, y_pred)
+print(f"Acurácia do modelo: {acc:.2f}")
+print("Relatório de Classificação:")
+from sklearn.metrics import confusion_matrix
+print("Matriz de Confusão:")
+print(confusion_matrix(y_test, y_pred))
+print(classification_report(y_test, y_pred))
