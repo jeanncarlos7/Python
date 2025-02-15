@@ -1,0 +1,30 @@
+def verificar_elegibilidade(renda_mensal, historico_credito, divida_atual, idade, tempo_emprego):
+    """
+    Verifica a elegibilidade para obtenção de crédito com base em critérios básicos.
+    """
+    if renda_mensal < 2000:
+        return "Negado: Renda mensal abaixo do mínimo necessário."
+    if historico_credito < 500:
+        return "Negado: Histórico de crédito insuficiente."
+    if divida_atual > (renda_mensal * 0.5):
+        return "Negado: Alto comprometimento da renda com dívidas."
+    if idade < 18:
+        return "Negado: Idade mínima não atingida."
+    if tempo_emprego < 6:
+        return "Negado: Tempo de emprego insuficiente."
+    
+    return "Aprovado: Você atende aos critérios de elegibilidade para crédito."
+
+if __name__ == "__main__":
+    print("Verificador de Elegibilidade para Crédito")
+    
+    # Valores fixos para evitar erro de entrada interativa no ambiente restrito
+    renda_mensal = 5000  # Renda mensal fixa
+    historico_credito = 700  # Score de crédito fixo
+    divida_atual = 1000  # Dívida atual fixa
+    idade = 30  # Idade fixa
+    tempo_emprego = 12  # Tempo de emprego fixo em meses
+    
+    resultado = verificar_elegibilidade(renda_mensal, historico_credito, divida_atual, idade, tempo_emprego)
+    
+    print(f"\nResultado da Verificação: {resultado}")
