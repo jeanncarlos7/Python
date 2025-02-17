@@ -1,0 +1,52 @@
+import pandas as pd
+import numpy as np
+import plotly.express as px
+import matplotlib.pyplot as plt
+
+# Gerando um dataset fictício
+def gerar_dados_credito(n=1000):
+    np.random.seed(42)
+    dados = {
+        "Idade": np.random.randint(21, 70, n),
+        "Renda Mensal": np.random.randint(1500, 20000, n),
+        "Dívida Atual": np.random.randint(0, 50000, n),
+        "Histórico de Crédito": np.random.randint(300, 850, n),
+        "Tempo de Emprego": np.random.randint(0, 30, n),
+        "Inadimplente": np.random.choice(["Sim", "Não"], size=n, p=[0.2, 0.8])
+    }
+    return pd.DataFrame(dados)
+
+# Criando os dados
+df = gerar_dados_credito()
+
+# Gerando gráficos com Matplotlib para evitar dependência do Kaleido
+plt.figure(figsize=(10, 5))
+plt.hist(df["Idade"], bins=20, color='blue', alpha=0.7)
+plt.title("Distribuição de Idade")
+plt.xlabel("Idade")
+plt.ylabel("Frequência")
+plt.savefig("distribuicao_idade.png")
+plt.show()
+
+plt.figure(figsize=(10, 5))
+df.boxplot(column=["Renda Mensal"], by="Inadimplente")
+plt.title("Distribuição de Renda por Inadimplência")
+plt.xlabel("Inadimplente")
+plt.ylabel("Renda Mensal")
+plt.savefig("renda_inadimplencia.png")
+plt.show()
+
+plt.figure(figsize=(10, 5))
+plt.scatter(df["Histórico de Crédito"], df["Dívida Atual"], c=df["Inadimplente"].map({"Sim": "red", "Não": "green"}), alpha=0.5)
+plt.title("Dívida Atual vs. Histórico de Crédito")
+plt.xlabel("Histórico de Crédito")
+plt.ylabel("Dívida Atual")
+plt.savefig("divida_vs_credito.png")
+plt.show()
+
+# Exibição de métricas
+total_inadimplentes = df[df["Inadimplente"] == "Sim"].shape[0]
+print(f"Total de Inadimplentes: {total_inadimplentes}")
+
+# Exibição dos dados
+print(df.head())
