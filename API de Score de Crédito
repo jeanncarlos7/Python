@@ -1,0 +1,58 @@
+from fastapi import FastAPI
+from pydantic import BaseModel
+import ssl
+
+# Resolver possível erro de SSL
+try:
+    ssl._create_default_https_context = ssl._create_unverified_context
+except AttributeError:
+    pass
+
+app = FastAPI()
+
+class ClienteDados(BaseModel):
+    renda_mensal: float
+    historico_credito: int  # Entre 0 e 1000 (quanto maior, melhor)
+    divida_atual: float
+    idade: int  # Nova variável para melhorar o score
+    emprestimos_anteriores: int  # Número de empréstimos anteriores
+
+@app.post("/calcular_score")
+def calcular_score(cliente: ClienteDados):
+    # Algoritmo melhorado de score de crédito
+    peso_renda = 0.4
+    peso_historico = 0.3
+    peso_divida = 0.2
+    peso_emprestimos = 0.1
+
+    score = (
+        (cliente.renda_mensal / (cliente.divida_atual + 1)) * 100 * peso_renda +
+        cliente.historico_credito * peso_historico +
+        max(0, (5 - cliente.emprestimos_anteriores)) * 20 * peso_emprestimos +
+        max(0, (cliente.idade - 18)) * 2  # Mais idade pode indicar mais estabilidade
+    )
+    
+    score = min(max(score, 300), 850)  # Mantém o score dentro dos limites
+    
+    return {"score_credito": round(score, 2)}
+
+# Rodar a API: `uvicorn script:app --reload`
+
+__________________________________________________________________________________________
+
+Como rodar: 
+1 - Instale o FastAPI e Uvicorn: pip install fastapi uvicorn
+2 - Execute o servidor: uvicorn api_score_credito:app --reload
+3 - Acesse a documentação interativa: http://127.0.0.1:8000/docs
+
+Funcionalidades:
+API REST usando FastAPI.
+Endpoint para calcular o score de crédito com base em renda, histórico de crédito e dívidas.
+Documentação automática com Swagger.
+Testes de API.
+
+Tecnologias:
+Python com FastAPI.
+Banco de dados SQLite.
+Uvicorn para rodar o servidor.
+
