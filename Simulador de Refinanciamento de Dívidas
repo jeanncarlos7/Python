@@ -1,0 +1,50 @@
+from fastapi import FastAPI
+from pydantic import BaseModel
+import math
+import ssl
+import sys
+
+# Verificar se o módulo SSL está disponível
+if "ssl" not in sys.modules:
+    ssl._create_default_https_context = ssl._create_unverified_context
+
+app = FastAPI()
+
+class RefinanciamentoDados(BaseModel):
+    valor_divida: float
+    taxa_juros_anual: float  # Em percentual (ex: 12 para 12%)
+    prazo_meses: int  # Número de meses para refinanciamento
+    renda_mensal: float  # Nova variável para calcular comprometimento de renda
+    valor_entrada: float = 0  # Permite entrada inicial para reduzir dívida
+
+@app.post("/simular_refinanciamento")
+def simular_refinanciamento(dados: RefinanciamentoDados):
+    if dados.valor_divida <= 0 or dados.taxa_juros_anual < 0 or dados.prazo_meses <= 0 or dados.renda_mensal <= 0:
+        return {"erro": "Valores de entrada devem ser positivos e maiores que zero."}
+    
+    valor_financiado = max(dados.valor_divida - dados.valor_entrada, 0)
+    taxa_juros_mensal = (dados.taxa_juros_anual / 100) / 12
+    
+    if taxa_juros_mensal == 0:
+        parcela = valor_financiado / dados.prazo_meses
+    else:
+        parcela = (valor_financiado * taxa_juros_mensal) / (1 - math.pow(1 + taxa_juros_mensal, -dados.prazo_meses))
+    
+    total_pago = parcela * dados.prazo_meses
+    juros_totais = total_pago - valor_financiado
+    comprometimento_renda = (parcela / dados.renda_mensal) * 100
+    
+    status = "Aprovado" if comprometimento_renda < 30 else "Alto comprometimento"
+    
+    resultado = {
+        "valor_financiado": round(valor_financiado, 2),
+        "parcela_mensal": round(parcela, 2),
+        "total_pago": round(total_pago, 2),
+        "juros_totais": round(juros_totais, 2),
+        "comprometimento_renda": round(comprometimento_renda, 2),
+        "status": status
+    }
+    
+    return resultado
+
+# Rodar a API: `uvicorn simulador_refinanciamento:app --reload`
