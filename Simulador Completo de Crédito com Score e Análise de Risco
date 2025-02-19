@@ -1,0 +1,60 @@
+from fastapi import FastAPI
+from pydantic import BaseModel
+import math
+import ssl
+
+# Verifica se o módulo SSL está disponível para evitar erros
+try:
+    ssl.create_default_context()
+except AttributeError:
+    ssl = None
+
+app = FastAPI()
+
+class ClienteDados(BaseModel):
+    renda_mensal: float
+    idade: int
+    historico_pagamentos: int  # 0 = ruim, 1 = médio, 2 = bom
+    uso_credito: float  # Percentual de uso do limite de crédito
+    valor_solicitado: float
+    taxa_juros_anual: float
+    prazo_meses: int
+
+def calcular_score(dados: ClienteDados):
+    score = 300  # Base inicial
+    score += (dados.renda_mensal / 1000) * 5
+    score += dados.idade * 2
+    score += dados.historico_pagamentos * 100
+    score -= dados.uso_credito * 2
+    return min(max(score, 300), 850)  # Score entre 300 e 850
+
+def avaliar_risco(score: float):
+    if score >= 750:
+        return "Baixo"
+    elif score >= 600:
+        return "Médio"
+    else:
+        return "Alto"
+
+def calcular_parcela(valor, taxa_juros, prazo):
+    taxa_juros_mensal = (taxa_juros / 100) / 12
+    if taxa_juros_mensal == 0:
+        return valor / prazo
+    return (valor * taxa_juros_mensal) / (1 - math.pow(1 + taxa_juros_mensal, -prazo))
+
+@app.post("/simular_credito")
+def simular_credito(dados: ClienteDados):
+    score = calcular_score(dados)
+    risco = avaliar_risco(score)
+    parcela = calcular_parcela(dados.valor_solicitado, dados.taxa_juros_anual, dados.prazo_meses)
+    comprometimento_renda = (parcela / dados.renda_mensal) * 100
+    status = "Aprovado" if risco != "Alto" and comprometimento_renda < 30 else "Recusado"
+    return {
+        "score": round(score, 2),
+        "risco": risco,
+        "parcela_mensal": round(parcela, 2),
+        "comprometimento_renda": round(comprometimento_renda, 2),
+        "status": status
+    }
+
+# Rodar a API: `uvicorn simulador_credito:app --reload`
