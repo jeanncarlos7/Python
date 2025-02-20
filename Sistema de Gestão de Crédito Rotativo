@@ -1,0 +1,64 @@
+from fastapi import FastAPI
+from pydantic import BaseModel
+from datetime import datetime, timedelta
+import ssl
+
+# Verifica se o SSL está disponível
+try:
+    ssl.create_default_context()
+except AttributeError:
+    ssl = None
+
+app = FastAPI()
+
+class Cliente(BaseModel):
+    id: int
+    nome: str
+    limite_credito: float
+    saldo_devedor: float = 0.0
+    taxa_juros_mensal: float = 12.0  # Exemplo: 12% ao mês
+    data_vencimento: datetime
+
+clientes_db = {}
+
+@app.post("/clientes")
+def criar_cliente(cliente: Cliente):
+    if cliente.id in clientes_db:
+        return {"erro": "Cliente já cadastrado"}
+    clientes_db[cliente.id] = cliente
+    return {"mensagem": "Cliente cadastrado com sucesso", "cliente": cliente}
+
+@app.get("/clientes/{cliente_id}")
+def obter_cliente(cliente_id: int):
+    cliente = clientes_db.get(cliente_id)
+    if not cliente:
+        return {"erro": "Cliente não encontrado"}
+    return cliente
+
+@app.post("/realizar_compra")
+def realizar_compra(cliente_id: int, valor_compra: float):
+    cliente = clientes_db.get(cliente_id)
+    if not cliente:
+        return {"erro": "Cliente não encontrado"}
+    if cliente.saldo_devedor + valor_compra > cliente.limite_credito:
+        return {"erro": "Limite de crédito excedido"}
+    
+    cliente.saldo_devedor += valor_compra
+    return {"mensagem": "Compra realizada", "novo_saldo_devedor": cliente.saldo_devedor}
+
+@app.get("/calcular_juros/{cliente_id}")
+def calcular_juros(cliente_id: int):
+    cliente = clientes_db.get(cliente_id)
+    if not cliente:
+        return {"erro": "Cliente não encontrado"}
+    
+    dias_atraso = (datetime.now() - cliente.data_vencimento).days
+    if dias_atraso <= 0:
+        return {"mensagem": "Nenhum juros aplicado", "saldo_devedor": cliente.saldo_devedor}
+    
+    juros = (cliente.saldo_devedor * (cliente.taxa_juros_mensal / 100)) * (dias_atraso / 30)
+    cliente.saldo_devedor += juros
+    
+    return {"mensagem": "Juros aplicados", "juros": juros, "novo_saldo_devedor": cliente.saldo_devedor}
+
+# Para rodar a API: `uvicorn gestao_credito_rotativo:app --reload`
