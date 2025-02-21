@@ -1,0 +1,87 @@
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from datetime import datetime
+from typing import Dict
+
+app = FastAPI()
+
+class Usuario(BaseModel):
+    id: int
+    nome: str
+    tipo: str  # "credor" ou "tomador"
+    saldo: float = 0.0
+
+class Emprestimo(BaseModel):
+    id: int
+    tomador_id: int
+    credor_id: int = None
+    valor: float
+    taxa_juros: float
+    prazo_meses: int
+    status: str = "pendente"
+    data_solicitacao: datetime = datetime.now()
+
+usuarios_db: Dict[int, Usuario] = {}
+emprestimos_db: Dict[int, Emprestimo] = {}
+
+@app.post("/usuarios")
+def criar_usuario(usuario: Usuario):
+    if usuario.id in usuarios_db:
+        raise HTTPException(status_code=400, detail="Usuário já cadastrado")
+    usuarios_db[usuario.id] = usuario
+    return {"mensagem": "Usuário cadastrado com sucesso", "usuario": usuario}
+
+@app.get("/usuarios/{usuario_id}")
+def obter_usuario(usuario_id: int):
+    usuario = usuarios_db.get(usuario_id)
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+    return usuario
+
+@app.post("/solicitar_emprestimo")
+def solicitar_emprestimo(emprestimo: Emprestimo):
+    if emprestimo.tomador_id not in usuarios_db:
+        raise HTTPException(status_code=404, detail="Tomador não encontrado")
+    if usuarios_db[emprestimo.tomador_id].tipo != "tomador":
+        raise HTTPException(status_code=400, detail="Apenas tomadores podem solicitar empréstimos")
+    
+    emprestimo.data_solicitacao = datetime.now()
+    emprestimos_db[emprestimo.id] = emprestimo
+    return {"mensagem": "Empréstimo solicitado com sucesso", "emprestimo": emprestimo}
+
+@app.get("/emprestimos/{emprestimo_id}")
+def obter_emprestimo(emprestimo_id: int):
+    emprestimo = emprestimos_db.get(emprestimo_id)
+    if not emprestimo:
+        raise HTTPException(status_code=404, detail="Empréstimo não encontrado")
+    return emprestimo
+
+@app.post("/oferecer_emprestimo")
+def oferecer_emprestimo(emprestimo_id: int, credor_id: int):
+    if credor_id not in usuarios_db:
+        raise HTTPException(status_code=404, detail="Credor não encontrado")
+    if usuarios_db[credor_id].tipo != "credor":
+        raise HTTPException(status_code=400, detail="Apenas credores podem oferecer empréstimos")
+    
+    emprestimo = emprestimos_db.get(emprestimo_id)
+    if not emprestimo:
+        raise HTTPException(status_code=404, detail="Empréstimo não encontrado")
+    if emprestimo.status != "pendente":
+        raise HTTPException(status_code=400, detail="Este empréstimo já foi atendido")
+    
+    emprestimo.credor_id = credor_id
+    emprestimo.status = "aprovado"
+    return {"mensagem": "Empréstimo aprovado", "emprestimo": emprestimo}
+
+@app.post("/pagar_emprestimo")
+def pagar_emprestimo(emprestimo_id: int, valor_pagamento: float):
+    emprestimo = emprestimos_db.get(emprestimo_id)
+    if not emprestimo:
+        raise HTTPException(status_code=404, detail="Empréstimo não encontrado")
+    if emprestimo.status != "aprovado":
+        raise HTTPException(status_code=400, detail="Empréstimo não pode ser pago neste estado")
+    
+    emprestimo.valor -= valor_pagamento
+    if emprestimo.valor <= 0:
+        emprestimo.status = "quitado"
+    return {"mensagem": "Pagamento realizado", "emprestimo": emprestimo}
