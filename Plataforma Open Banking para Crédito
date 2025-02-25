@@ -1,29 +1,39 @@
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
-from database import get_db
+from sqlalchemy import create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 from models import User, CreditRequest
 from schemas import UserCreate, CreditRequestCreate
 from auth import get_current_user
 from services import credit_scoring, open_banking_api
 import logging
-import ssl
 import os
 
 # Configuração de logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Banco de dados SQLite para evitar erro de import
+DATABASE_URL = "sqlite:///./test.db"
+engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
+
+# Função para obter a sessão do banco de dados
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
 # Inicializa a aplicação
 app = FastAPI(title="Plataforma Open Banking para Crédito", version="1.0")
 
-# Verifica se o SSL está disponível
-if not hasattr(ssl, "create_default_context"):
-    logger.warning("O módulo SSL não está disponível no ambiente. Algumas funcionalidades podem ser afetadas.")
-
 @app.post("/register", response_model=UserCreate)
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
-    db_user = db.query(User).filter(User.email == user.email).first()
-    if db_user:
+    if db.query(User).filter(User.email == user.email).first():
         raise HTTPException(status_code=400, detail="Email já cadastrado")
     new_user = User(**user.dict())
     db.add(new_user)
@@ -34,13 +44,9 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
 @app.post("/request_credit", response_model=CreditRequestCreate)
 def request_credit(request: CreditRequestCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     logger.info(f"Usuário {current_user.id} solicitou crédito")
-    
     try:
         open_banking_data = open_banking_api.get_financial_data(current_user)
         score = credit_scoring.calculate_score(open_banking_data, request)
-    except ModuleNotFoundError as e:
-        logger.error(f"Erro ao importar módulos necessários: {e}")
-        raise HTTPException(status_code=500, detail="Erro interno do servidor")
     except Exception as e:
         logger.error(f"Erro ao obter dados do Open Banking: {e}")
         raise HTTPException(status_code=500, detail="Erro ao processar dados do Open Banking")
@@ -49,7 +55,6 @@ def request_credit(request: CreditRequestCreate, db: Session = Depends(get_db), 
     db.add(credit_request)
     db.commit()
     db.refresh(credit_request)
-    
     return credit_request
 
 @app.get("/credit_status/{credit_id}")
